@@ -1,15 +1,3 @@
-#####################################################
-# Camada Física da Computação
-# Carareto
-# 11/08/2020
-# Aplicação
-####################################################
-
-
-# esta é a camada superior, de aplicação do seu software de comunicação serial UART.
-# para acompanhar a execução e identificar erros, construa prints ao longo do código!
-
-
 from enlace import *
 import time
 import numpy as np
@@ -35,16 +23,18 @@ def main():
                 rxLen = com2.rx.getBufferLen()
 
             rxBuffer, nRx = com2.getData(rxLen)
-            print(f' recebeu o pacote com tamanho: {rxLen}\n')
-
-            # try:
-            #    is_finished_decoded_str = rxBuffer.decode('utf-8')
-            #    print(is_finished_decoded_str)
-            # except:
-            #    print('ahah')
+            print(f'recebeu o pacote com tamanho: {rxLen}\n')
 
             com2.sendData(np.asarray(rxLen.to_bytes(2, 'big')))
             print(f'respondeu o cliente com o tamanho: {len(rxBuffer)}')
+
+            try:
+                is_finished_decoded_str = rxBuffer.decode()
+                print("recebeu sinal pra desligar")
+                if is_finished_decoded_str == "fechou":
+                    break
+            except:
+                print('')
 
             pacotes_recebidos.append(rxBuffer)  # saving
 
@@ -59,12 +49,8 @@ def main():
         print("-------------------------")
         print("Comunicação encerrada")
         print("-------------------------")
-        # com1.disable()
-
-        # with open('img-recebido.png', 'wb') as file:
-        #    file.write(rxBuffer)
-
-        #print(f'imagem salva...\n')
+        com2.disable()
+        exit()
 
     except Exception as erro:
         print("ops! :-\\")
@@ -72,6 +58,5 @@ def main():
         com2.disable()
 
 
-    # so roda o main quando for executado do terminal ... se for chamado dentro de outro modulo nao roda
 if __name__ == "__main__":
     main()

@@ -1,11 +1,3 @@
-#####################################################
-# Camada Física da Computação
-# Carareto
-# 11/08/2020
-# Aplicação
-####################################################
-
-
 from enlace import *
 import time
 import numpy as np
@@ -24,16 +16,20 @@ def separate_pacotes(img_array):
     return pacotes
 
 
-def main():
+def open_image(path):
+    with open(path, "rb") as image:
+        f = image.read()
+        img_array = bytearray(f)
+    return img_array
+
+
+def main(img_path):
     try:
         com1 = enlace(serialName)
         com1.enable()
         print(f'Inicializado client - transmissão...\n')
-        with open('advice.png', "rb") as image:
-            f = image.read()
-            img_array = bytearray(f)
 
-        txBuffer = img_array
+        img_array = open_image(img_path)
         pacotes = separate_pacotes(img_array)
 
         len_recebido_servidor = 0
@@ -42,11 +38,8 @@ def main():
         for msg in pacotes:
 
             com1.sendData(np.asarray(msg))
-            #print(f'enviou a mensagem {np.asarray(msg)}...\n')
             print(f'enviou a mensagem {contador}...\n')
             contador += 1
-
-            #txSize = com1.tx.getStatus()
 
             rxLen = com1.rx.getBufferLen()
 
@@ -68,11 +61,16 @@ def main():
             print('Sucesso, encerrando a comunicação')
             elapsed_time = time.time() - start_time
             print(
-                f'tempo gasto: {elapsed_time:.2f}\nvelocidade bits/s:{(len_recebido_servidor / elapsed_time):.2f}')
+                f'tempo gasto: {elapsed_time:.2f}\nvelocidade: {(len_recebido_servidor / elapsed_time):.2f} b/s')
 
-            #str_sucesso = "foi tudo amigao"
-            #str_as_bytes = str.encode(str_sucesso)
-            # com1.sendData(np.asarray(str_as_bytes))
+            str_fim = "fechou"
+            str_as_bytes = str_fim.encode()
+            com1.sendData(np.asarray(str_as_bytes))
+            print('enviando sinal pra desligar...\n')
+
+            print("-------------------------")
+            print("Comunicação encerrada")
+            print("-------------------------")
 
         else:
             print('Não deu certo :(')
@@ -86,4 +84,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main('imgs/advice.png')
