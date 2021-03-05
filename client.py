@@ -38,6 +38,7 @@ def main():
 
         len_recebido_servidor = 0
         contador = 0
+        start_time = time.time()
         for msg in pacotes:
 
             com1.sendData(np.asarray(msg))
@@ -65,9 +66,13 @@ def main():
 
         if len(img_array) == len_recebido_servidor:
             print('Sucesso, encerrando a comunicação')
-            str_sucesso = "foi tudo amigao"
-            str_as_bytes = str.encode(str_sucesso)
-            com1.sendData(np.asarray(str_as_bytes))
+            elapsed_time = time.time() - start_time
+            print(
+                f'tempo gasto: {elapsed_time:.2f}\nvelocidade bits/s:{(len_recebido_servidor / elapsed_time):.2f}')
+
+            #str_sucesso = "foi tudo amigao"
+            #str_as_bytes = str.encode(str_sucesso)
+            # com1.sendData(np.asarray(str_as_bytes))
 
         else:
             print('Não deu certo :(')
