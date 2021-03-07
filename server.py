@@ -5,6 +5,22 @@ import numpy as np
 serialName = "/dev/ttyACM1"           # Ubuntu (variacao de)
 
 
+def receivement_handler(rxBuffer):
+    length = len(rxBuffer)
+    rx_head = rxBuffer[:10]
+    rx_payload = rxBuffer[10:length - 4]
+    rx_eop = rxBuffer[length - 4: length]
+    return rx_head, rx_payload, rx_eop
+
+
+def create_package(payload):
+
+    HEAD = bytes(10)
+    EOP = bytes(4)
+    pacote = HEAD + payload + EOP
+    return np.asarray(pacote)
+
+
 def main():
     try:
         com2 = enlace(serialName)
@@ -23,20 +39,23 @@ def main():
                 rxLen = com2.rx.getBufferLen()
 
             rxBuffer, nRx = com2.getData(rxLen)
-            print(f'recebeu o pacote com tamanho: {rxLen}\n')
+            received_package = receivement_handler(rxBuffer)[1]
 
-            com2.sendData(np.asarray(rxLen.to_bytes(2, 'big')))
+            print(f'recebeu o pacote com tamanho: {rxLen}\n')
+            response = rxLen.to_bytes(2, 'big')
+            response = create_package(response)
+            com2.sendData(response)
             print(f'respondeu o cliente com o tamanho: {len(rxBuffer)}')
 
             try:
-                is_finished_decoded_str = rxBuffer.decode()
+                is_finished_decoded_str = received_package.decode()
                 print("recebeu sinal pra desligar")
                 if is_finished_decoded_str == "fechou":
                     break
             except:
                 print('')
 
-            pacotes_recebidos.append(rxBuffer)  # saving
+            pacotes_recebidos.append(received_package)  # saving
 
         received_img = b''.join(pacotes_recebidos)
 

@@ -1,14 +1,14 @@
 from enlace import *
 import time
 import numpy as np
-
+from server import receivement_handler, create_package
 serialName = "/dev/ttyACM0"           # Ubuntu (variacao de)
 
 
 def separate_pacotes(img_array):
 
     len_img = len(img_array)
-    tamanho_pacote = 200
+    tamanho_pacote = 114
     resto = len_img % tamanho_pacote
     pacotes = [img_array[i:i+tamanho_pacote]
                for i in range(0, len_img - resto, tamanho_pacote)]
@@ -35,10 +35,11 @@ def main(img_path):
         len_recebido_servidor = 0
         contador = 0
         start_time = time.time()
-        for msg in pacotes:
+        for PAYLOAD in pacotes:
+            pacote = create_package(PAYLOAD)
+            com1.sendData(pacote)
 
-            com1.sendData(np.asarray(msg))
-            print(f'enviou a mensagem {contador}...\n')
+            print(f'Enviou a pacote: {contador}...\n')
             contador += 1
 
             rxLen = com1.rx.getBufferLen()
@@ -49,8 +50,8 @@ def main(img_path):
                 rxLen = com1.rx.getBufferLen()
 
             rxBuffer, nRx = com1.getData(rxLen)
-
-            int_tamanho_recebido = int.from_bytes(rxBuffer, 'big')
+            resposta = receivement_handler(rxBuffer)[1]
+            int_tamanho_recebido = int.from_bytes(resposta, 'big')
             len_recebido_servidor += int_tamanho_recebido
             print(f'recebeu de volta o tamanho: {int_tamanho_recebido}')
 
@@ -65,7 +66,8 @@ def main(img_path):
 
             str_fim = "fechou"
             str_as_bytes = str_fim.encode()
-            com1.sendData(np.asarray(str_as_bytes))
+            end_package = create_package(str_as_bytes)
+            com1.sendData(end_package)
             print('enviando sinal pra desligar...\n')
 
             print("-------------------------")
