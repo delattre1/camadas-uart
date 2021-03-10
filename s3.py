@@ -3,7 +3,7 @@ import os
 import time
 import numpy as np
 from utils import datagram_builder, receivement_handler
-#serialName = "/dev/ttyACM1"
+
 serialName = "/dev/ttyVirtualS0"
 
 
@@ -36,9 +36,6 @@ class Servidor:
 
         self.rxLen = self.com2.rx.getBufferLen()
 
-        while self.rxLen == 0:
-            self.rxLen = self.com2.rx.getBufferLen()
-
         self.receive_package()
 
         if self.r_eop == b''.join(is_available):
@@ -50,26 +47,6 @@ class Servidor:
             self.com2.rx.clearBuffer()
             print(
                 f'len buffer depois do handshake: {self.com2.rx.getBufferLen()}')
-
-    def check_package_integrity(self,):
-        tamanho_received_payload = len(self.r_payload)
-        tamanho_pelo_header = list(self.r_head)[0]
-        print(
-            f'tamanho descrito no header: {tamanho_pelo_header} | recebido: {tamanho_received_payload}')
-        is_len_ok = tamanho_received_payload == tamanho_pelo_header
-
-        if is_len_ok:
-            package = datagram_builder(resend=False)
-            self.com2.sendData(package)
-            print(
-                f'O pacote [{self.contador_pacotes}] foi recebido com sucesso\n')
-            self.contador_pacotes += 1
-            self.pacotes_recebidos.append(self.r_payload)
-        else:
-            print(
-                f'O pacote [{self.contador_pacotes}] veio errado, pedindo o reenvio')
-            #package = datagram_builder(resend=True)
-            # self.com2.sendData(package)
 
     def main(self,):
         print(f'Servidor Inicializado...\n')
