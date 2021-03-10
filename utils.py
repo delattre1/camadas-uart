@@ -5,8 +5,20 @@ PAYLOAD = [bytes([0]) for i in range(0)]
 EOP = [bytes([0]) for i in range(4)]
 
 
-def datagram_builder(head=HEAD, payload=PAYLOAD, eop=EOP):
-    pacote = head + payload + eop
+def datagram_builder(head=HEAD, payload=PAYLOAD, eop=EOP, is_lastpackage=False, resend=False):
+    size = len(payload + head + eop)
+    head[0] = size.to_bytes(1, 'big')
+
+    if is_lastpackage:
+        head[1] = bytes([22])
+
+    if resend:
+        head[2] = bytes([22])
+
+    print(f'head {head}')
+    print(f'payload {payload}')
+    print(f'eop {eop}')
+    pacote = head + list(payload) + eop
     return np.asarray(pacote)
 
 
@@ -15,6 +27,7 @@ def receivement_handler(rxBuffer):
     rx_head = rxBuffer[:10]
     rx_payload = rxBuffer[10:length - 4]
     rx_eop = rxBuffer[length - 4: length]
+
     return rx_head, rx_payload, rx_eop
 
 

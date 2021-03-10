@@ -5,7 +5,8 @@ import sys
 import numpy as np
 from utils import datagram_builder, receivement_handler, open_image, separate_pacotes
 
-serialName = "/dev/ttyACM0"
+#serialName = "/dev/ttyACM0"
+serialName = "/dev/ttyVirtualS1"
 
 
 class Client:
@@ -19,6 +20,22 @@ class Client:
 
     def send_package(self, pacote):
         self.com1.sendData(pacote)
+
+    def receive_package(self):
+
+        self.rxLen = self.com1.rx.getBufferLen()
+
+        while self.rxLen == 0:
+            self.rxLen = self.com1.rx.getBufferLen()
+
+        self.rxBuffer, self.nRx = self.com1.getData(self.rxLen)
+
+        self.r_head, self.r_payload, self.r_eop = receivement_handler(
+            self.rxBuffer)
+
+        print(f'chegou {self.rxBuffer} com tamanho: {self.nRx}')
+        len_from_header = list(self.r_head)[0]
+        print(f'Tamanho de acordo com o header: {len_from_header}')
 
     def send_all_packages(self, lista_pacotes):
         for i in range(len(lista_pacotes)):
@@ -67,15 +84,14 @@ class Client:
 
         start_time = time.time()
 
-        self.rxLen = self.com1.rx.getBufferLen()
-
-        waiting_handshake_response = True
-
-        while self.rxLen == 0:
-            self.rxLen = self.com1.rx.getBufferLen()
+        while not self.finished_handshake:
             elapsed_time = time.time() - start_time
-            if self.rxLen != 0:
-                waiting_handshake_response = False
+
+            self.receive_package()
+
+            if self.r_eop == b''.join(is_available):
+                print(f'Handshake realizado,\nIniciando o envio dos pacotes...\n')
+                self.finished_handshake = True
 
             elif elapsed_time >= 5:
                 want_send_again = input(
@@ -87,14 +103,6 @@ class Client:
                     print(f'finalizar client...')
                     os._exit(os.EX_OK)
 
-        self.rxBuffer, self.nRx = self.com1.getData(self.rxLen)
-
-        self.r_head, self.r_payload, self.r_eop = receivement_handler(
-            self.rxBuffer)
-        if self.r_eop == b''.join(is_available):
-            print(f'Handshake realizado,\nIniciando o envio dos pacotes...\n')
-            self.finished_handshake = True
-
     def main(self,):
         print(f'Client inicializado...\n')
 
@@ -102,7 +110,6 @@ class Client:
             self.waiting_handshake()
 
         print(f'Iniciando o envio dos pacotes...')
-        self.send_all_packages(self.lista_pacotes)
 
         os._exit(os.EX_OK)
 

@@ -3,7 +3,8 @@ import os
 import time
 import numpy as np
 from utils import datagram_builder, receivement_handler
-serialName = "/dev/ttyACM1"
+#serialName = "/dev/ttyACM1"
+serialName = "/dev/ttyVirtualS0"
 
 
 class Servidor:
@@ -14,6 +15,22 @@ class Servidor:
         self.contador_pacotes = 0
         self.pacotes_recebidos = []
 
+    def receive_package(self):
+
+        self.rxLen = self.com2.rx.getBufferLen()
+
+        while self.rxLen == 0:
+            self.rxLen = self.com2.rx.getBufferLen()
+
+        self.rxBuffer, self.nRx = self.com2.getData(self.rxLen)
+
+        self.r_head, self.r_payload, self.r_eop = receivement_handler(
+            self.rxBuffer)
+
+        print(f'chegou {self.rxBuffer} com tamanho: {self.nRx}')
+        len_from_header = list(self.r_head)[0]
+        print(f'Tamanho de acordo com o header: {len_from_header}')
+
     def waiting_handshake(self,):
         is_available = [b'\x11', b'\x01', b'\x11', b'\x11']
 
@@ -22,11 +39,8 @@ class Servidor:
         while self.rxLen == 0:
             self.rxLen = self.com2.rx.getBufferLen()
 
-        print('recebeu algo')
-        self.rxBuffer, self.nRx = self.com2.getData(self.rxLen)
-        self.r_head, self.r_payload, self.r_eop = receivement_handler(
-            self.rxBuffer)
-        print(f'r_head: {self.r_head}\n')
+        self.receive_package()
+
         if self.r_eop == b''.join(is_available):
             pacote = datagram_builder(eop=is_available)
             self.com2.sendData(pacote)
@@ -56,23 +70,6 @@ class Servidor:
                 f'O pacote [{self.contador_pacotes}] veio errado, pedindo o reenvio')
             #package = datagram_builder(resend=True)
             # self.com2.sendData(package)
-
-    def get_packages_and_store(self,):
-
-        self.rxLen = self.com2.rx.getBufferLen()
-
-        while self.rxLen == 0:
-            self.rxLen = self.com2.rx.getBufferLen()
-
-        print(f'O tamanho do buffer é: {self.rxLen}')
-        self.rxBuffer, self.nRx = self.com2.getData(self.rxLen)
-        self.r_head, self.r_payload, self.r_eop = receivement_handler(
-            self.rxBuffer)
-
-        print(f'o tamanho do que chegou é: {self.nRx}')
-        pause = input('press enter to continue')
-
-        # self.check_package_integrity()
 
     def main(self,):
         print(f'Servidor Inicializado...\n')
