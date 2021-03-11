@@ -7,17 +7,18 @@ EOP = [bytes([0]) for i in range(4)]
 
 def datagram_builder(head=HEAD, payload=PAYLOAD, eop=EOP, is_lastpackage=False, resend=False):
     size = len(payload + head + eop)
+    # size += 1  # to raise some error
     head[0] = size.to_bytes(1, 'big')
-
+    print(f'acabei de criar um pacote. resend: {resend}')
     if is_lastpackage:
         head[1] = bytes([22])
 
     if resend:
         head[2] = bytes([22])
 
-    print(f'head {head}')
-    print(f'payload {payload}')
-    print(f'eop {eop}')
+    #print(f'head {head}')
+    #print(f'payload {payload}')
+    #print(f'eop {eop}')
     pacote = head + list(payload) + eop
     return np.asarray(pacote)
 

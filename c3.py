@@ -22,7 +22,6 @@ class Client:
         self.com1.sendData(self.pacote)
 
     def receive_package(self):
-
         self.rxLen = self.com1.rx.getBufferLen()
 
         while self.rxLen == 0:
@@ -37,8 +36,8 @@ class Client:
                     time.sleep(1)
                     self.start_time = time.time()
 
-                elif want_send_again == 'n':
-                    print(f'finalizar client...')
+                elif send_again == 'n':
+                    print(f'Finalizar client...')
                     os._exit(os.EX_OK)
 
         self.rxBuffer, self.nRx = self.com1.getData(self.rxLen)
@@ -46,9 +45,23 @@ class Client:
         self.r_head, self.r_payload, self.r_eop = receivement_handler(
             self.rxBuffer)
 
-        print(f'chegou {self.rxBuffer} com tamanho: {self.nRx}')
+        #print(f'chegou {self.rxBuffer} com tamanho: {self.nRx}')
         len_from_header = list(self.r_head)[0]
-        print(f'Tamanho de acordo com o header: {len_from_header}')
+        must_resend = list(self.r_head)[2]
+
+        print(
+            f'Tamanho de acordo com o header: {len_from_header}\nChegou: {self.nRx}\n')
+
+        if must_resend == 22:
+            print('Foi solicitado o reenvio pela outra parte - enviando novamente...\n')
+            self.send_package()
+            self.receive_package()
+            print(f' must resend: {must_resend}')
+
+        elif len_from_header != (self.nRx):
+            print(f'Houve perda de dados na recepção - Solicitando pacote novamente...\n')
+            self.pacote = datagram_builder(resend=True)
+            self.receive_package()
 
     def waiting_handshake(self,):
         print(f'Verificando estado do servidor...')
@@ -58,22 +71,11 @@ class Client:
         self.send_package()
 
         while not self.finished_handshake:
-            elapsed_time = time.time() - self.start_time
             self.receive_package()
 
             if self.r_eop == b''.join(is_available):
                 print(f'Handshake realizado,\nIniciando o envio dos pacotes...\n')
                 self.finished_handshake = True
-
-            elif elapsed_time >= 5:
-                want_send_again = input(
-                    'TIME OUT - Sem resposta servidor\nGostaria de mandar novamente? (s/n)')
-                if want_send_again == 's':
-                    self.send_package(pacote)
-                    start_time = time.time()
-                elif want_send_again == 'n':
-                    print(f'finalizar client...')
-                    os._exit(os.EX_OK)
 
     def main(self,):
         print(f'Client inicializado...\n')
