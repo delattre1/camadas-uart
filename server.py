@@ -2,7 +2,7 @@ from enlace import *
 import time
 import numpy as np
 
-serialName = "/dev/ttyACM1"           # Ubuntu (variacao de)
+serialName = "/dev/ttyVirtualS0"           # Ubuntu (variacao de)
 
 
 def main():

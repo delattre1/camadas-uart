@@ -2,7 +2,7 @@ from enlace import *
 import time
 import numpy as np
 
-serialName = "/dev/ttyACM0"           # Ubuntu (variacao de)
+serialName = "/dev/ttyVirtualS1"           # Ubuntu (variacao de)
 
 
 def separate_pacotes(img_array):
@@ -84,4 +84,4 @@ def main(img_path):
 
 
 if __name__ == "__main__":
-    main()
+    main('imgs/advice.png')
