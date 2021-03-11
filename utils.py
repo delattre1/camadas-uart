@@ -2,24 +2,27 @@ import numpy as np
 
 HEAD = [bytes([0]) for i in range(10)]
 PAYLOAD = [bytes([0]) for i in range(0)]
-EOP = [bytes([0]) for i in range(4)]
+EOP = [bytes([255]) for i in range(4)]
+
+# Quando o cliente enviar um pacote, deve informar obrigatoriamente (em algum espaço do head reservado a isso), o
+# número do pacote e o número total de pacotes que serão transmitidos.
 
 
-def datagram_builder(head=HEAD, payload=PAYLOAD, eop=EOP, is_lastpackage=False, resend=False):
-    size = len(payload + head + eop)
+def datagram_builder(head=HEAD, payload=PAYLOAD, eop=EOP, current_package=0, total_of_packages=0, server_available=False):
+    size = len(payload + eop)
+    print(f'\nlist(payload): \n{list(payload)}\n')
     # size += 1  # to raise some error
     head[0] = size.to_bytes(1, 'big')
-    print(f'acabei de criar um pacote. resend: {resend}')
-    if is_lastpackage:
-        head[1] = bytes([22])
-
-    if resend:
-        head[2] = bytes([22])
-
-    #print(f'head {head}')
-    #print(f'payload {payload}')
-    #print(f'eop {eop}')
-    pacote = head + list(payload) + eop
+    head[1] = bytes([current_package])
+    head[2] = bytes([total_of_packages])
+    if server_available:  # for handshake
+        head[3] = bytes([255])
+    # print(f'head {head}')
+    # print(f'payload {payload}')
+    # print(f'eop {eop}')
+    pacote = head + payload + eop
+    print(f'\n Pacote:\n {pacote}')
+    print(f'acabei de criar um pacote: {len(pacote)}')
     return np.asarray(pacote)
 
 
@@ -36,10 +39,17 @@ def separate_pacotes(img_array):
     len_img = len(img_array)
     tamanho_pacote = 114
     resto = len_img % tamanho_pacote
-    pacotes = [img_array[i:i+tamanho_pacote]
+    pacotes = [list(img_array[i:i+tamanho_pacote])
                for i in range(0, len_img - resto, tamanho_pacote)]
-    pacotes.append(img_array[len_img - resto:len_img])
-    return pacotes
+    pacotes.append(list(img_array[len_img - resto: len_img]))
+
+    pacotes_bytes_list = []
+    for i in range(len(pacotes)):
+        pacotes_bytes_list.append([])
+        for char in pacotes[i]:
+            pacotes_bytes_list[i].append(bytes([char]))
+
+    return pacotes_bytes_list
 
 
 def open_image(path):

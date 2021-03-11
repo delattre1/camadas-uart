@@ -65,17 +65,22 @@ class Client:
 
     def waiting_handshake(self,):
         print(f'Verificando estado do servidor...')
-        is_available = [b'\x11', b'\x01', b'\x11', b'\x11']
+        server_available = b'\xFF'
 
-        self.pacote = datagram_builder(eop=is_available)
+        self.pacote = datagram_builder(server_available=True)
         self.send_package()
 
         while not self.finished_handshake:
             self.receive_package()
 
-            if self.r_eop == b''.join(is_available):
+            if self.r_eop == b''.join(server_available):
                 print(f'Handshake realizado,\nIniciando o envio dos pacotes...\n')
                 self.finished_handshake = True
+
+    def send_image(self):
+        print(f'Enviando pacote 0 ...\n')
+        self.pacote = datagram_builder(self.lista_pacotes[0])
+        self.send_package()
 
     def main(self,):
         print(f'Client inicializado...\n')
@@ -86,7 +91,8 @@ class Client:
 
         print(f'Iniciando o envio dos pacotes...')
 
-        os._exit(os.EX_OK)
+        self.send_image()
+        # os._exit(os.EX_OK)
 
 
 client = Client('imgs/advice.png')
