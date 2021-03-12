@@ -10,19 +10,26 @@ EOP = [bytes([255]) for i in range(4)]
 
 def datagram_builder(head=HEAD, payload=PAYLOAD, eop=EOP, current_package=0, total_of_packages=0, server_available=False):
     size = len(payload + eop)
-    print(f'\nlist(payload): \n{list(payload)}\n')
+    #print(f'\nlist(payload): \n{list(payload)}\n')
     # size += 1  # to raise some error
     head[0] = size.to_bytes(1, 'big')
-    head[1] = bytes([current_package])
-    head[2] = bytes([total_of_packages])
+    byte_current_package = current_package.to_bytes(2, 'big')
+    byte_total_of_packages = total_of_packages.to_bytes(2, 'big')
+
+    head[1] = byte_current_package[0:1]
+    head[2] = byte_current_package[1:2]
+
+    head[3] = byte_total_of_packages[0:1]
+    head[4] = byte_total_of_packages[1:2]
+
     if server_available:  # for handshake
-        head[3] = bytes([255])
+        head[5] = bytes([255])
     # print(f'head {head}')
     # print(f'payload {payload}')
     # print(f'eop {eop}')
     pacote = head + payload + eop
-    print(f'\n Pacote:\n {pacote}')
-    print(f'acabei de criar um pacote: {len(pacote)}')
+    #print(f'\n Pacote:\n {pacote}')
+    #print(f'acabei de criar um pacote: {len(pacote)}')
     return np.asarray(pacote)
 
 
@@ -35,7 +42,7 @@ def receivement_handler(rxBuffer):
     return rx_head, rx_payload, rx_eop
 
 
-def separate_pacotes(img_array):
+def separate_packages(img_array):
     len_img = len(img_array)
     tamanho_pacote = 114
     resto = len_img % tamanho_pacote
