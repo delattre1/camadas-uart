@@ -8,13 +8,20 @@ EOP = [bytes([255]) for i in range(4)]
 # número do pacote e o número total de pacotes que serão transmitidos.
 
 
-def datagram_builder(head=HEAD, payload=PAYLOAD, eop=EOP, current_package=0, total_of_packages=0, server_available=False):
+def datagram_builder(head=HEAD, payload=PAYLOAD, eop=EOP, current_package=1, total_of_packages=0, server_available=False, acknowledge=False, finished=False, fake_size=False):
     size = len(payload + eop)
-    #print(f'\nlist(payload): \n{list(payload)}\n')
+
+    if fake_size:
+        size -= 4
+    # print(f'\nlist(payload): \n{list(payload)}\n')
     # size += 1  # to raise some error
     head[0] = size.to_bytes(1, 'big')
     byte_current_package = current_package.to_bytes(2, 'big')
     byte_total_of_packages = total_of_packages.to_bytes(2, 'big')
+
+    # to simulate an error
+    # if current_package == 7:
+    #    byte_current_package = int(8).to_bytes(2, 'big')
 
     head[1] = byte_current_package[0:1]
     head[2] = byte_current_package[1:2]
@@ -24,12 +31,22 @@ def datagram_builder(head=HEAD, payload=PAYLOAD, eop=EOP, current_package=0, tot
 
     if server_available:  # for handshake
         head[5] = bytes([255])
-    # print(f'head {head}')
+    #print(f'acknowledge: {acknowledge}')
+
+    if acknowledge == True:
+        head[6] = bytes([255])
+    else:
+        head[6] = bytes([0])
+
+    if finished == True:
+        head[7] = bytes([255])
+
+    #print(f'head {head}')
     # print(f'payload {payload}')
     # print(f'eop {eop}')
     pacote = head + payload + eop
-    #print(f'\n Pacote:\n {pacote}')
-    #print(f'acabei de criar um pacote: {len(pacote)}')
+    # print(f'\n Pacote:\n {pacote}')
+    # print(f'acabei de criar um pacote: {len(pacote)}')
     return np.asarray(pacote)
 
 
